@@ -53,11 +53,37 @@ const ChatMessage = ({ role, content, imageUrl, isLoading }: ChatMessageProps) =
           </div>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
-            {content.split("\n").map((line, i) => (
-              <p key={i} className="mb-2 last:mb-0 text-foreground/90 leading-relaxed">
-                {line}
-              </p>
-            ))}
+            {content.split("\n").map((line, i) => {
+              // Check if line is a bullet point (starts with * or -)
+              const isBullet = /^[\*\-]\s/.test(line.trim());
+              const cleanLine = isBullet ? line.trim().replace(/^[\*\-]\s/, '') : line;
+              
+              // Function to render text with bold formatting
+              const renderFormattedText = (text: string) => {
+                const parts = text.split(/(\*\*[^*]+\*\*)/g);
+                return parts.map((part, idx) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={idx} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+                  }
+                  return part;
+                });
+              };
+
+              if (isBullet) {
+                return (
+                  <div key={i} className="flex gap-2 mb-1.5 last:mb-0">
+                    <span className="text-primary mt-1">•</span>
+                    <span className="text-foreground/90 leading-relaxed">{renderFormattedText(cleanLine)}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <p key={i} className="mb-2 last:mb-0 text-foreground/90 leading-relaxed">
+                  {renderFormattedText(line)}
+                </p>
+              );
+            })}
           </div>
         )}
       </div>
