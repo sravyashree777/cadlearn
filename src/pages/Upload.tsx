@@ -107,28 +107,28 @@ const Upload = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1 pt-24 pb-8 px-4">
+      <main className="flex-1 pt-20 sm:pt-24 pb-6 sm:pb-8 px-3 sm:px-4">
         <div className="container mx-auto max-w-3xl">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold mb-2">
               Upload Your Mechanical Object
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground px-2">
               Upload an image and get step-by-step CAD instructions
             </p>
           </div>
 
           {/* Upload Card */}
-          <div className="glass-card rounded-2xl p-6 mb-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
+          <div className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+              <div className="order-1">
                 <ImageUpload
                   onImageSelect={handleImageSelect}
                   disabled={isLoading}
                 />
               </div>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6 order-2">
                 <SoftwareSelect
                   value={software}
                   onChange={setSoftware}
@@ -140,7 +140,7 @@ const Upload = () => {
                   <Button
                     onClick={handleSend}
                     disabled={isLoading}
-                    className="w-full gap-2 glow-primary"
+                    className="w-full gap-2 glow-primary h-12 sm:h-11 text-base sm:text-sm"
                     size="lg"
                   >
                     {isLoading ? (
@@ -158,8 +158,8 @@ const Upload = () => {
                 )}
 
                 {!selectedImage && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 text-primary" />
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-secondary/30 rounded-lg p-3">
+                    <AlertCircle className="w-4 h-4 text-primary flex-shrink-0" />
                     <span>Upload an image to enable the Send button</span>
                   </div>
                 )}
@@ -169,11 +169,11 @@ const Upload = () => {
 
           {/* Chat Messages */}
           {messages.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-muted-foreground">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-muted-foreground">
                 AI Response
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {messages.map((message) => (
                   <ChatMessage
                     key={message.id}
