@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, X, Video } from "lucide-react";
+import { Play, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +29,7 @@ const VideoGuide = ({ tool, description }: VideoGuideProps) => {
 
   if (!videoAvailable) {
     return (
-      <div className="inline-flex items-center gap-2 text-xs text-muted-foreground/60 bg-secondary/30 px-3 py-1.5 rounded-full">
+      <div className="inline-flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground/60 bg-secondary/30 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
         <Video className="w-3 h-3" />
         <span>Visual guide coming soon — follow written steps</span>
       </div>
@@ -42,28 +42,29 @@ const VideoGuide = ({ tool, description }: VideoGuideProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="gap-2 text-xs text-primary hover:bg-primary/10"
+          className="gap-1.5 sm:gap-2 text-xs text-primary hover:bg-primary/10 h-8 sm:h-9 px-2 sm:px-3"
         >
           <Play className="w-3 h-3" />
-          Watch: {videoPlaceholders[tool.toLowerCase()]}
+          <span className="hidden sm:inline">Watch: {videoPlaceholders[tool.toLowerCase()]}</span>
+          <span className="sm:hidden">Watch Tutorial</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-card border-border/50 max-w-2xl">
+      <DialogContent className="glass-card border-border/50 max-w-[calc(100vw-2rem)] sm:max-w-2xl mx-4 sm:mx-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Video className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Video className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             {description}
           </DialogTitle>
         </DialogHeader>
         <div className="aspect-video bg-navy-900 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <Play className="w-8 h-8 text-primary" />
+          <div className="text-center p-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Play className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Video tutorial placeholder
             </p>
-            <p className="text-sm text-muted-foreground/60 mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground/60 mt-1">
               10-30 second guide for: {tool}
             </p>
           </div>

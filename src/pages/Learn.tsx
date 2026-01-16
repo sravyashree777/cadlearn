@@ -87,53 +87,53 @@ const Learn = () => {
     <div className="min-h-screen">
       <Navbar />
 
-      <main className="pt-24 pb-16 px-4">
+      <main className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-3 sm:px-4">
         <div className="container mx-auto max-w-4xl">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-3 sm:mb-4">
               Learn <span className="gradient-text">CAD Basics</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
               Master the fundamental tools used in Fusion 360 and AutoDesk Inventor.
               These five operations are the building blocks of almost every 3D model.
             </p>
           </div>
 
           {/* CAD Tools */}
-          <section className="mb-16">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Box className="w-4 h-4 text-primary" />
+          <section className="mb-10 sm:mb-16">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 flex items-center gap-2">
+              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
               </span>
               Essential CAD Tools
             </h2>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {cadTools.map((tool, index) => (
                 <div
                   key={tool.name}
-                  className="glass-card-hover rounded-xl p-6 animate-slide-up"
+                  className="glass-card-hover rounded-xl p-4 sm:p-6 animate-slide-up"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                      <tool.icon className="w-6 h-6 text-primary" />
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <tool.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2">{tool.name}</h3>
-                      <p className="text-muted-foreground mb-4">{tool.description}</p>
-                      <div className="bg-secondary/30 rounded-lg p-4">
-                        <p className="text-sm font-medium text-foreground/80 mb-2">
+                      <h3 className="text-base sm:text-lg font-semibold mb-2">{tool.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-3 sm:mb-4">{tool.description}</p>
+                      <div className="bg-secondary/30 rounded-lg p-3 sm:p-4">
+                        <p className="text-xs sm:text-sm font-medium text-foreground/80 mb-2">
                           Quick Tips:
                         </p>
                         <ul className="space-y-1">
                           {tool.tips.map((tip, i) => (
                             <li
                               key={i}
-                              className="text-sm text-muted-foreground flex items-start gap-2"
+                              className="text-xs sm:text-sm text-muted-foreground flex items-start gap-2"
                             >
-                              <span className="text-primary mt-1">•</span>
+                              <span className="text-primary mt-0.5 sm:mt-1">•</span>
                               {tip}
                             </li>
                           ))}
@@ -148,16 +148,16 @@ const Learn = () => {
 
           {/* Beginner Tips */}
           <section>
-            <h2 className="text-xl font-semibold mb-6">Tips for Beginners</h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6">Tips for Beginners</h2>
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
               {beginnerTips.map((tip, index) => (
                 <div
                   key={tip.title}
-                  className="glass-card rounded-xl p-5 animate-slide-up"
+                  className="glass-card rounded-xl p-4 sm:p-5 animate-slide-up"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <h3 className="font-semibold text-primary mb-2">{tip.title}</h3>
-                  <p className="text-sm text-muted-foreground">{tip.content}</p>
+                  <h3 className="font-semibold text-primary mb-2 text-sm sm:text-base">{tip.title}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{tip.content}</p>
                 </div>
               ))}
             </div>
