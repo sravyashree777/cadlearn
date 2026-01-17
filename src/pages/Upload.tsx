@@ -3,6 +3,7 @@ import { Send, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import ImageUpload from "@/components/ImageUpload";
 import SoftwareSelect from "@/components/SoftwareSelect";
 import ChatMessage from "@/components/ChatMessage";
@@ -195,6 +196,8 @@ const Upload = () => {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };
