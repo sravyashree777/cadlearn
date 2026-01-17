@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { GraduationCap, Target, AlertTriangle, Heart } from "lucide-react";
 
 const About = () => {
@@ -107,6 +108,8 @@ const About = () => {
           </section>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

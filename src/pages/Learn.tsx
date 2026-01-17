@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Pencil, Box, Scissors, Circle, Dot } from "lucide-react";
 
 const Learn = () => {
@@ -164,6 +165,8 @@ const Learn = () => {
           </section>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

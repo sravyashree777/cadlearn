@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Box, Layers, Sparkles, BookOpen } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   const features = [
@@ -109,12 +110,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-6 sm:py-8 px-4 border-t border-border/30">
-        <div className="container mx-auto text-center text-xs sm:text-sm text-muted-foreground">
-          <p>Built for engineering students learning CAD modeling</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
