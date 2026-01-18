@@ -378,7 +378,7 @@ const Upload = () => {
                   )}
 
                   {!user && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-400/80 bg-amber-500/10 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-primary/90 bg-primary/10 rounded-lg p-3 border border-primary/20">
                       <User className="w-4 h-4 flex-shrink-0" />
                       <span>Sign in to save your chat history</span>
                     </div>
