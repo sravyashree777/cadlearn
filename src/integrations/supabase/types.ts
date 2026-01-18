@@ -14,13 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_initial: boolean | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_initial?: boolean | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_initial?: boolean | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          cad_software: string
+          created_at: string
+          id: string
+          image_url: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cad_software: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cad_software?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_session_owner: { Args: { session_uuid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
