@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, AlertCircle, RotateCcw, MessageSquare } from "lucide-react";
+import { Send, AlertCircle, RotateCcw, MessageSquare, Menu, LogIn, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -8,32 +8,41 @@ import Footer from "@/components/Footer";
 import ImageUpload from "@/components/ImageUpload";
 import SoftwareSelect from "@/components/SoftwareSelect";
 import ChatMessage from "@/components/ChatMessage";
-import { useChatSession } from "@/hooks/useChatSession";
+import ChatHistorySidebar from "@/components/ChatHistorySidebar";
+import AuthModal from "@/components/AuthModal";
+import { usePersistentChat } from "@/hooks/usePersistentChat";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Upload = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [software, setSoftware] = useState<string>("fusion360");
   const [followUpInput, setFollowUpInput] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const { toast } = useToast();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { user, signOut } = useAuth();
   const {
     session,
     isLoading,
+    isSaving,
     setIsLoading,
-    startNewSession,
+    createSession,
+    loadSession,
     addMessage,
     clearSession,
     hasActiveSession,
     hasInitialAnalysis,
-  } = useChatSession();
+  } = usePersistentChat();
 
   // Restore image preview from session
   useEffect(() => {
-    if (session?.imagePreview && !imagePreview) {
-      setImagePreview(session.imagePreview);
+    if (session?.imageUrl && !imagePreview) {
+      setImagePreview(session.imageUrl);
       setSoftware(session.software);
     }
   }, [session, imagePreview]);
@@ -49,6 +58,33 @@ const Upload = () => {
     }, 100);
   };
 
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    if (!user) return imagePreview; // Return base64 for non-authenticated users
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('chat-images')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Upload error:', error);
+        return imagePreview; // Fallback to base64
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return imagePreview;
+    }
+  };
+
   const handleInitialSend = async () => {
     if (!selectedImage || !imagePreview) {
       toast({
@@ -59,23 +95,37 @@ const Upload = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your chat history.",
+        variant: "destructive",
+      });
+      setAuthModalOpen(true);
+      return;
+    }
+
     const softwareName = software === "fusion360" ? "Fusion 360" : "AutoDesk Inventor";
     
-    // Start new session
-    startNewSession(software, imagePreview);
-
-    // Add user message with image
-    addMessage({
-      role: "user",
-      content: `Please analyze this mechanical object and provide CAD modeling steps for ${softwareName}.`,
-      imageUrl: imagePreview,
-      isInitial: true,
-    });
-
     setIsLoading(true);
     scrollToBottom();
 
     try {
+      // Upload image to storage
+      const uploadedImageUrl = await uploadImageToStorage(selectedImage);
+      
+      // Create new session
+      const newSession = await createSession(software, uploadedImageUrl || imagePreview);
+      if (!newSession) throw new Error("Failed to create session");
+
+      // Add user message with image
+      await addMessage({
+        role: "user",
+        content: `Please analyze this mechanical object and provide CAD modeling steps for ${softwareName}.`,
+        imageUrl: uploadedImageUrl || imagePreview,
+        isInitial: true,
+      });
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-cad`,
         {
@@ -104,7 +154,7 @@ const Upload = () => {
 
       const data = await response.json();
 
-      addMessage({
+      await addMessage({
         role: "assistant",
         content: data.instructions || "Unable to generate instructions. Please try again.",
       });
@@ -127,7 +177,7 @@ const Upload = () => {
     setFollowUpInput("");
 
     // Add user message
-    addMessage({
+    await addMessage({
       role: "user",
       content: userMessage,
     });
@@ -177,7 +227,7 @@ const Upload = () => {
 
       const data = await response.json();
 
-      addMessage({
+      await addMessage({
         role: "assistant",
         content: data.instructions || "Unable to generate response. Please try again.",
       });
@@ -208,23 +258,78 @@ const Upload = () => {
     setFollowUpInput("");
   };
 
+  const handleSelectSession = async (sessionId: string) => {
+    await loadSession(sessionId);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
+      {/* Chat History Sidebar */}
+      <ChatHistorySidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        activeSessionId={session?.id || null}
+        onSelectSession={handleSelectSession}
+        onNewSession={handleNewSession}
+      />
+
       <main className="flex-1 pt-20 sm:pt-24 pb-6 sm:pb-8 px-3 sm:px-4">
         <div className="container mx-auto max-w-3xl">
-          {/* Header */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold mb-2">
-              {hasActiveSession ? "CAD Learning Assistant" : "Upload Your Mechanical Object"}
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground px-2">
-              {hasActiveSession 
-                ? "Ask follow-up questions about your model"
-                : "Upload an image and get step-by-step CAD instructions"
-              }
-            </p>
+          {/* Header with controls */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2">
+              {user && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSidebarOpen(true)}
+                  className="h-10 w-10"
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              )}
+              <div>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-display font-bold">
+                  {hasActiveSession ? "CAD Learning Assistant" : "Upload Your Mechanical Object"}
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {hasActiveSession 
+                    ? "Ask follow-up questions about your model"
+                    : "Upload an image and get step-by-step CAD instructions"
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Auth Button */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-[120px]">
+                  {user.email}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => signOut()}
+                  className="h-9 w-9"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAuthModalOpen(true)}
+                className="gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </Button>
+            )}
           </div>
 
           {/* Upload Card - Only show when no active session */}
@@ -247,14 +352,14 @@ const Upload = () => {
                   {selectedImage && (
                     <Button
                       onClick={handleInitialSend}
-                      disabled={isLoading}
+                      disabled={isLoading || isSaving}
                       className="w-full gap-2 glow-primary h-12 sm:h-11 text-base sm:text-sm"
                       size="lg"
                     >
-                      {isLoading ? (
+                      {isLoading || isSaving ? (
                         <>
                           <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                          Analyzing...
+                          {isSaving ? "Saving..." : "Analyzing..."}
                         </>
                       ) : (
                         <>
@@ -271,6 +376,13 @@ const Upload = () => {
                       <span>Upload an image to start learning</span>
                     </div>
                   )}
+
+                  {!user && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-400/80 bg-amber-500/10 rounded-lg p-3">
+                      <User className="w-4 h-4 flex-shrink-0" />
+                      <span>Sign in to save your chat history</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -280,9 +392,9 @@ const Upload = () => {
           {hasActiveSession && (
             <div className="glass-card rounded-xl p-3 sm:p-4 mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {session?.imagePreview && (
+                {session?.imageUrl && (
                   <img 
-                    src={session.imagePreview} 
+                    src={session.imageUrl} 
                     alt="Current model" 
                     className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-white/10"
                   />
@@ -341,16 +453,16 @@ const Upload = () => {
                   onChange={(e) => setFollowUpInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask a follow-up question about your model..."
-                  disabled={isLoading}
+                  disabled={isLoading || isSaving}
                   className="flex-1 bg-secondary/50 border-white/10 h-11 sm:h-10 text-base sm:text-sm"
                 />
                 <Button
                   onClick={handleFollowUpSend}
-                  disabled={isLoading || !followUpInput.trim()}
+                  disabled={isLoading || isSaving || !followUpInput.trim()}
                   size="icon"
                   className="h-11 w-11 sm:h-10 sm:w-10 flex-shrink-0"
                 >
-                  {isLoading ? (
+                  {isLoading || isSaving ? (
                     <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <Send className="w-4 h-4" />
@@ -369,6 +481,9 @@ const Upload = () => {
       </main>
 
       <Footer />
+
+      {/* Auth Modal */}
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 };
