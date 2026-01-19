@@ -53,9 +53,9 @@ const Upload = () => {
   };
 
   const scrollToBottom = () => {
-    setTimeout(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    requestAnimationFrame(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
   };
 
   const uploadImageToStorage = async (file: File): Promise<string | null> => {
