@@ -74,15 +74,26 @@ const Upload = () => {
         return imagePreview; // Fallback to base64
       }
 
-      const { data: { publicUrl } } = supabase.storage
+      // Use signed URL for private bucket access (1 hour expiry)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('chat-images')
-        .getPublicUrl(data.path);
+        .createSignedUrl(data.path, 3600);
 
-      return publicUrl;
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        console.error('Signed URL error:', signedUrlError);
+        return imagePreview;
+      }
+
+      return signedUrlData.signedUrl;
     } catch (error) {
       console.error('Upload error:', error);
       return imagePreview;
     }
+  };
+
+  const getAccessToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
   };
 
   const handleInitialSend = async () => {
@@ -126,13 +137,18 @@ const Upload = () => {
         isInitial: true,
       });
 
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-cad`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             imageBase64: imagePreview,
@@ -199,13 +215,18 @@ const Upload = () => {
 
       const softwareName = session.software === "fusion360" ? "Fusion 360" : "AutoDesk Inventor";
 
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-cad`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             software: softwareName,
