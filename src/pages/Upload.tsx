@@ -159,13 +159,17 @@ const Upload = () => {
       );
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          throw new Error(errorData.error || "Please sign in to analyze models");
+        }
         if (response.status === 429) {
           throw new Error("Rate limit exceeded. Please try again in a moment.");
         }
         if (response.status === 402) {
           throw new Error("AI service quota exceeded. Please try again later.");
         }
-        throw new Error("Failed to analyze image");
+        throw new Error(errorData.error || "Failed to analyze image");
       }
 
       const data = await response.json();
@@ -237,13 +241,17 @@ const Upload = () => {
       );
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          throw new Error(errorData.error || "Please sign in to continue");
+        }
         if (response.status === 429) {
           throw new Error("Rate limit exceeded. Please try again in a moment.");
         }
         if (response.status === 402) {
           throw new Error("AI service quota exceeded. Please try again later.");
         }
-        throw new Error("Failed to get response");
+        throw new Error(errorData.error || "Failed to get response");
       }
 
       const data = await response.json();
