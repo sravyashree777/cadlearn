@@ -1,1 +1,4 @@
 project_id = "cdwbwjcqwbsznxajvtjr"
+
+[functions.analyze-cad]
+verify_jwt = false
