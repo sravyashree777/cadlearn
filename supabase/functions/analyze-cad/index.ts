@@ -1,10 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const SYSTEM_PROMPT = `You are a professional CAD instructor.
+Analyze the given mechanical/CAD image.
+Identify the main geometry, features, and dimensions.
+Provide clear, beginner-friendly, step-by-step instructions
+to recreate the model in Autodesk Fusion 360 or AutoCAD.
+Assume the user has no prior CAD knowledge.
+Use numbered steps.
+After giving steps, ask the user if they are stuck at any step.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,36 +20,6 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    
-    if (userError || !user) {
-      const errorMessage = userError?.message?.includes("expired") 
-        ? "Session expired, please log in again"
-        : "Please sign in to analyze models";
-      return new Response(
-        JSON.stringify({ error: errorMessage }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const userId = user.id;
-    console.log("Authenticated user:", userId);
-
     const { imageBase64, software, messages, isFollowUp } = await req.json();
     
     if (!isFollowUp && !imageBase64) {
@@ -60,56 +38,17 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are a specialized CAD modeling instructor helping beginner mechanical engineering students learn to model 3D objects in ${software}. 
-
-YOUR ROLE:
-- You are a patient, encouraging CAD tutor focused ONLY on CAD learning
-- You help students understand CAD modeling step-by-step
-- You answer questions about specific CAD tools, techniques, and workflows
-- You help troubleshoot modeling errors and guide students through problems
-
-IMPORTANT GUIDELINES:
-1. Keep all responses beginner-friendly and encouraging
-2. Focus ONLY on these basic CAD tools: Sketch, Extrude, Cut, Fillet, Hole
-3. When providing dimensions, clearly state they are estimates
-4. Explain the reasoning behind each modeling decision
-5. Be specific about which planes, faces, and features to use
-6. Do NOT generate CAD files - only provide instructions and guidance
-7. Stay focused on CAD learning - politely redirect off-topic questions back to CAD
-8. Reference the uploaded image and previous steps when answering follow-up questions
-9. If a student asks about an error, help them understand what went wrong and how to fix it
-10. Encourage good modeling practices and workflow habits
-
-For initial image analysis, use this format:
-**Object Description:**
-[Brief description of the mechanical object]
-
-**Estimated Overall Dimensions:**
-[Approximate length x width x height]
-
-**Step-by-Step CAD Instructions:**
-1. **Step Title**
-   - Detailed instruction
-   - Additional details
-
-[Continue with remaining steps...]
-
-**Tips for Success:**
-- [Helpful tips specific to this model]
-
-For follow-up questions, provide clear, focused answers that reference the context of the current modeling session.`;
-
     // Build messages array for the API
     const apiMessages: any[] = [
-      { role: "system", content: systemPrompt }
+      { role: "system", content: SYSTEM_PROMPT }
     ];
 
     if (isFollowUp && messages && messages.length > 0) {
       // For follow-up questions, include conversation history
       for (const msg of messages) {
         if (msg.role === "user") {
-          if (msg.imageUrl && msg.isInitial) {
-            // Initial message with image
+          if (msg.imageUrl) {
+            // Message with image
             apiMessages.push({
               role: "user",
               content: [
@@ -118,7 +57,7 @@ For follow-up questions, provide clear, focused answers that reference the conte
               ]
             });
           } else {
-            // Text-only follow-up
+            // Text-only message
             apiMessages.push({
               role: "user",
               content: msg.content
@@ -133,12 +72,13 @@ For follow-up questions, provide clear, focused answers that reference the conte
       }
     } else {
       // Initial image analysis
+      const softwareName = software || "Fusion 360 or AutoCAD";
       apiMessages.push({
         role: "user",
         content: [
           {
             type: "text",
-            text: `Please analyze this image of a mechanical object and provide step-by-step CAD modeling instructions for ${software}. Remember to use approximate dimensions and keep instructions beginner-friendly.`,
+            text: `Analyze this CAD model and explain step-by-step how to create it in ${softwareName}.`,
           },
           {
             type: "image_url",
@@ -180,7 +120,6 @@ For follow-up questions, provide clear, focused answers that reference the conte
         );
       }
       
-      console.error("AI gateway returned error status:", response.status);
       return new Response(
         JSON.stringify({ error: "Unable to process request. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -188,7 +127,15 @@ For follow-up questions, provide clear, focused answers that reference the conte
     }
 
     const data = await response.json();
-    const instructions = data.choices?.[0]?.message?.content || "Unable to generate response.";
+    const instructions = data.choices?.[0]?.message?.content;
+    
+    if (!instructions) {
+      console.error("No content in AI response:", data);
+      return new Response(
+        JSON.stringify({ error: "AI did not return a response. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ instructions }),
